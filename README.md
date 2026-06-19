@@ -48,8 +48,8 @@ Create an ESPHome device YAML and import the package:
 
 ```yaml
 packages:
-  bridge: github://projectcobalt/Airtouch-4-RF-Bridge/packages/airtouch-temperature-bridge.yaml@main
-  diagnostics: github://projectcobalt/Airtouch-4-RF-Bridge/packages/hardware-diagnostics.yaml@main
+  bridge: github://projectcobalt/Airtouch-Temperature-Bridge/packages/airtouch-temperature-bridge.yaml@main
+  diagnostics: github://projectcobalt/Airtouch-Temperature-Bridge/packages/hardware-diagnostics.yaml@main
 ```
 
 Then configure the bridge:

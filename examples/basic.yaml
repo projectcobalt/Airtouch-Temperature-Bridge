@@ -5,8 +5,8 @@ substitutions:
 # The bridge package creates the UART, status LED, activity LED, and external
 # component. The diagnostics package is optional but recommended.
 packages:
-  bridge: github://projectcobalt/Airtouch-4-RF-Bridge/packages/airtouch-temperature-bridge.yaml@main
-  diagnostics: github://projectcobalt/Airtouch-4-RF-Bridge/packages/hardware-diagnostics.yaml@main
+  bridge: github://projectcobalt/Airtouch-Temperature-Bridge/packages/airtouch-temperature-bridge.yaml@main
+  diagnostics: github://projectcobalt/Airtouch-Temperature-Bridge/packages/hardware-diagnostics.yaml@main
 
 esphome:
   name: ${device_name}
