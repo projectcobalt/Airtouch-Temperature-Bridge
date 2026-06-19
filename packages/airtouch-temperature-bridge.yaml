@@ -1,0 +1,32 @@
+substitutions:
+  bridge_rx_pin: GPIO7
+  bridge_tx_pin: GPIO5
+  status_led_pin: GPIO18
+  temperature_led_pin: GPIO16
+
+external_components:
+  - source: github://projectcobalt/Airtouch-4-RF-Bridge
+    components:
+      - temperature_encoding_bridge
+
+status_led:
+  pin:
+    number: ${status_led_pin}
+    inverted: false
+
+output:
+  - platform: gpio
+    id: temperature_update_led
+    pin:
+      number: ${temperature_led_pin}
+      inverted: false
+
+uart:
+  - id: bridge_uart
+    rx_pin: ${bridge_rx_pin}
+    tx_pin: ${bridge_tx_pin}
+    baud_rate: 115200
+    data_bits: 8
+    stop_bits: 1
+    parity: NONE
+    rx_buffer_size: 2048

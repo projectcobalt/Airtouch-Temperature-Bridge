@@ -1,0 +1,26 @@
+# ESPHome build and local secrets
+.esphome/
+build/
+secrets.yaml
+*.bin
+*.elf
+*.map
+
+# Local validation
+.tmp*/
+__pycache__/
+*.py[cod]
+
+# Private protocol research retained outside the public repository surface
+research/
+airtouch4/
+apk/
+captures/
+decoded/
+docs/
+esphome/
+references/
+scripts/
+tests/
+decode-airtouch.ps1
+requirements.txt

@@ -1,0 +1,44 @@
+substitutions:
+  device_name: airtouch-temp-bridge
+  friendly_name: AirTouch Temperature Bridge
+
+packages:
+  bridge: !include packages/airtouch-temperature-bridge.yaml
+  diagnostics: !include packages/hardware-diagnostics.yaml
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  name_add_mac_suffix: true
+  project:
+    name: projectcobalt.airtouch-temperature-bridge
+    version: factory
+
+esp32:
+  board: lolin_s2_mini
+  variant: ESP32S2
+  framework:
+    type: arduino
+
+logger:
+  level: INFO
+
+# Credentials are intentionally omitted. Provision Wi-Fi over serial Improv,
+# then adopt the device in ESPHome.
+api:
+
+ota:
+  - platform: esphome
+
+wifi:
+
+improv_serial:
+
+temperature_encoding_bridge:
+  id: temperature_bridge
+  uart_id: bridge_uart
+  fallback_zone_count: 1
+  temperature_led: temperature_update_led
+  temperature_reporting: true
+  raw_logging: false
+  zones: []
