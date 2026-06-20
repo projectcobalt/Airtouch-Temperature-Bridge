@@ -1,12 +1,13 @@
 substitutions:
+  # Device identity and board-specific pin mapping.
   device_name: temperature-bridge
   friendly_name: AirTouch Temperature Bridge
-  # Change these four pins to match your ESP32 board and wiring.
   bridge_rx_pin: GPIO7
   bridge_tx_pin: GPIO5
   status_led_pin: GPIO18
   temperature_led_pin: GPIO16
 
+# Load the temperature bridge component from this repository.
 external_components:
   - source: github://projectcobalt/Airtouch-Temperature-Bridge
     components:
@@ -17,7 +18,7 @@ esphome:
   friendly_name: ${friendly_name}
   project:
     name: projectcobalt.airtouch-temperature-bridge
-    version: "1.0.0"
+    version: "1.0.1"
 
 esp32:
   board: lolin_s2_mini
@@ -28,6 +29,7 @@ esp32:
 logger:
   level: INFO
 
+# Hardware status and temperature-update indicators.
 status_led:
   pin:
     number: ${status_led_pin}
@@ -40,6 +42,7 @@ output:
       number: ${temperature_led_pin}
       inverted: false
 
+# UART connection to the controller.
 uart:
   - id: bridge_uart
     rx_pin: ${bridge_rx_pin}
@@ -50,6 +53,7 @@ uart:
     parity: NONE
     rx_buffer_size: 2048
 
+# Home Assistant connectivity and device updates.
 api:
   encryption:
     key: !secret temperature_bridge_api_key
@@ -62,6 +66,30 @@ wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
 
+# Configure the zones that publish Home Assistant temperatures.
+# The controller may report fewer active zones than fallback_zone_count;
+# configured groups above its live count are skipped automatically.
+temperature_encoding_bridge:
+  id: temperature_bridge
+  uart_id: bridge_uart
+  fallback_zone_count: 2
+  temperature_led: temperature_update_led
+  temperature_reporting: true
+  raw_logging: false
+  zones:
+    # One source uses its state directly. Aggregation defaults to average.
+    - group: 1
+      temperature_entities:
+        - sensor.living_room_temperature
+
+    # Two or three sources can be averaged, or aggregation can be min/max.
+    - group: 2
+      aggregation: average
+      temperature_entities:
+        - sensor.bedroom_temperature
+        - sensor.bedroom_remote_temperature
+
+# Hardware and bridge health diagnostics.
 debug:
   update_interval: 60s
 
@@ -136,9 +164,6 @@ sensor:
       return id(temperature_bridge).get_parser_resync_count();
 
 text_sensor:
-  - platform: version
-    name: "ESPHome Version"
-
   - platform: wifi_info
     ip_address:
       name: "IP Address"
@@ -148,30 +173,5 @@ text_sensor:
       name: "MAC Address"
 
   - platform: debug
-    device:
-      name: "Device Info"
     reset_reason:
       name: "Reset Reason"
-
-# Only groups listed here send temperatures. The controller can report fewer
-# active zones than fallback_zone_count; reports above its live count are
-# automatically skipped.
-temperature_encoding_bridge:
-  id: temperature_bridge
-  uart_id: bridge_uart
-  fallback_zone_count: 2
-  temperature_led: temperature_update_led
-  temperature_reporting: true
-  raw_logging: false
-  zones:
-    # One source uses its state directly. Aggregation defaults to average.
-    - group: 1
-      temperature_entities:
-        - sensor.living_room_temperature
-
-    # Two or three sources can be averaged, or aggregation can be min/max.
-    - group: 2
-      aggregation: average
-      temperature_entities:
-        - sensor.bedroom_temperature
-        - sensor.bedroom_remote_temperature

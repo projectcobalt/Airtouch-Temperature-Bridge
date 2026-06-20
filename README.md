@@ -105,7 +105,7 @@ After adoption, configure the board pins and zones using
 
 The example exposes slow-updating hardware health entities:
 
-- uptime, Wi-Fi signal, ESP temperature, and ESPHome version;
+- uptime, Wi-Fi signal, and ESP temperature;
 - free, minimum, and largest heap values;
 - heap fragmentation and loop time;
 - reset reason, IP address, SSID, and MAC address;
@@ -134,7 +134,7 @@ factory.yaml                              Serial Improv first-flash configuratio
 
 ## Status
 
-Current release: `v1.0.0`
+Current release: `v1.0.1`
 
 The component supports up to 16 zones, one to three source sensors per zone,
 dynamic frame lengths, CRC validation, controller restart recovery, and bounded

@@ -1,4 +1,5 @@
 substitutions:
+  # Device identity and reference board pin mapping.
   device_name: airtouch-temp-bridge
   friendly_name: AirTouch Temperature Bridge
   bridge_rx_pin: GPIO7
@@ -6,6 +7,7 @@ substitutions:
   status_led_pin: GPIO18
   temperature_led_pin: GPIO16
 
+# Load the temperature bridge component from this repository.
 external_components:
   - source: github://projectcobalt/Airtouch-Temperature-Bridge
     components:
@@ -17,7 +19,7 @@ esphome:
   name_add_mac_suffix: true
   project:
     name: projectcobalt.airtouch-temperature-bridge
-    version: "1.0.0"
+    version: "1.0.1"
 
 esp32:
   board: lolin_s2_mini
@@ -28,6 +30,7 @@ esp32:
 logger:
   level: INFO
 
+# Hardware status and temperature-update indicators.
 status_led:
   pin:
     number: ${status_led_pin}
@@ -40,6 +43,7 @@ output:
       number: ${temperature_led_pin}
       inverted: false
 
+# UART connection to the controller.
 uart:
   - id: bridge_uart
     rx_pin: ${bridge_rx_pin}
@@ -50,6 +54,7 @@ uart:
     parity: NONE
     rx_buffer_size: 2048
 
+# Provisioning and adoption services.
 api:
 
 ota:
@@ -59,6 +64,7 @@ wifi:
 
 improv_serial:
 
+# Start with no zones; configure them after the device is adopted.
 temperature_encoding_bridge:
   id: temperature_bridge
   uart_id: bridge_uart
