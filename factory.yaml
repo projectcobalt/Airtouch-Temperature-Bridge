@@ -6,6 +6,8 @@ substitutions:
   bridge_tx_pin: GPIO5
   status_led_pin: GPIO18
   temperature_led_pin: GPIO16
+  sensor_report_interval: 30s
+  led_pulse_duration: 150ms
 
 # Load the temperature bridge component from this repository.
 external_components:
@@ -19,7 +21,7 @@ esphome:
   name_add_mac_suffix: true
   project:
     name: projectcobalt.airtouch-temperature-bridge
-    version: "1.0.1"
+    version: "2.0.0"
 
 esp32:
   board: lolin_s2_mini
@@ -70,6 +72,8 @@ temperature_encoding_bridge:
   uart_id: bridge_uart
   fallback_zone_count: 1
   temperature_led: temperature_update_led
+  report_interval: ${sensor_report_interval}
+  led_pulse_duration: ${led_pulse_duration}
   temperature_reporting: true
   raw_logging: false
   zones: []

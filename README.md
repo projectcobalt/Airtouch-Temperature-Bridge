@@ -24,8 +24,9 @@ Home Assistant already has access to reliable room sensors, averages, and
 derived temperatures. This bridge translates those existing readings into the
 compact sensor reports expected by the controller.
 
-Each configured zone can use one to three Home Assistant entities. Multiple
-readings can be combined using `average`, `min`, or `max`.
+Each configured zone can use one to three temperature sensors. Multiple
+readings can be combined using `average`, `min`, or `max`. Sources can be local
+ESPHome sensors or remote Home Assistant sensors.
 
 ## Hardware
 
@@ -68,9 +69,35 @@ substitutions:
   bridge_tx_pin: GPIO5
   status_led_pin: GPIO18
   temperature_led_pin: GPIO16
+  sensor_report_interval: 30s
+  led_pulse_duration: 150ms
 ```
 
-Then configure the required zones:
+Define each temperature as an ESPHome sensor. A remote source uses the
+Home Assistant sensor platform:
+
+```yaml
+sensor:
+  - platform: homeassistant
+    id: living_room_temperature
+    entity_id: sensor.living_room_temperature
+```
+
+Local sensors such as OneWire or I2C use their normal ESPHome platform and are
+referenced the same way:
+
+```yaml
+one_wire:
+  - platform: gpio
+    pin: GPIO12
+
+sensor:
+  - platform: dallas_temp
+    id: local_temperature
+    name: "Local Temperature"
+```
+
+Then assign sensor IDs to the required zones:
 
 ```yaml
 temperature_encoding_bridge:
@@ -78,22 +105,25 @@ temperature_encoding_bridge:
   uart_id: bridge_uart
   fallback_zone_count: 5
   temperature_led: temperature_update_led
+  report_interval: ${sensor_report_interval}
+  led_pulse_duration: ${led_pulse_duration}
   zones:
     - group: 1
-      temperature_entities:
-        - sensor.living_room_temperature
+      temperature_sensors:
+        - living_room_temperature
 
     - group: 2
       aggregation: average
-      temperature_entities:
-        - sensor.bedroom_temperature
-        - sensor.bedroom_remote_temperature
+      temperature_sensors:
+        - bedroom_temperature
+        - local_temperature
 ```
 
 Only listed groups are enabled. Groups must be unique and between 1 and 16.
-Each group accepts one to three numeric Home Assistant entities. Invalid or
+Each group accepts one to three ESPHome temperature sensors. Invalid or
 unavailable readings are ignored; the group waits until at least one source has
-a valid value.
+a valid value. Local sensors continue reporting to the controller when Home
+Assistant is unavailable.
 
 ## First Flash
 
@@ -134,9 +164,10 @@ factory.yaml                              Serial Improv first-flash configuratio
 
 ## Status
 
-Current release: `v1.0.1`
+Current release: `v2.0.0`
 
 The component supports up to 16 zones, one to three source sensors per zone,
+local and remote temperature sources, configurable reporting and LED timing,
 dynamic frame lengths, CRC validation, controller restart recovery, and bounded
 UART processing. It has been tested on an ESP32-S2 with ESPHome 2026.5.3.
 

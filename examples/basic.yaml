@@ -6,6 +6,8 @@ substitutions:
   bridge_tx_pin: GPIO5
   status_led_pin: GPIO18
   temperature_led_pin: GPIO16
+  sensor_report_interval: 30s
+  led_pulse_duration: 150ms
 
 # Load the temperature bridge component from this repository.
 external_components:
@@ -18,7 +20,7 @@ esphome:
   friendly_name: ${friendly_name}
   project:
     name: projectcobalt.airtouch-temperature-bridge
-    version: "1.0.1"
+    version: "2.0.0"
 
 esp32:
   board: lolin_s2_mini
@@ -74,22 +76,25 @@ temperature_encoding_bridge:
   uart_id: bridge_uart
   fallback_zone_count: 2
   temperature_led: temperature_update_led
+  report_interval: ${sensor_report_interval}
+  led_pulse_duration: ${led_pulse_duration}
   temperature_reporting: true
   raw_logging: false
   zones:
     # One source uses its state directly. Aggregation defaults to average.
     - group: 1
-      temperature_entities:
-        - sensor.living_room_temperature
+      temperature_sensors:
+        - living_room_temperature
 
     # Two or three sources can be averaged, or aggregation can be min/max.
     - group: 2
       aggregation: average
-      temperature_entities:
-        - sensor.bedroom_temperature
-        - sensor.bedroom_remote_temperature
+      temperature_sensors:
+        - bedroom_temperature
+        - bedroom_remote_temperature
 
-# Hardware and bridge health diagnostics.
+# Temperature inputs. Home Assistant, OneWire, I2C, BLE, and other ESPHome
+# sensors can all be referenced by ID in the bridge configuration above.
 debug:
   update_interval: 60s
 
@@ -99,6 +104,19 @@ button:
     entity_category: diagnostic
 
 sensor:
+  - platform: homeassistant
+    id: living_room_temperature
+    entity_id: sensor.living_room_temperature
+
+  - platform: homeassistant
+    id: bedroom_temperature
+    entity_id: sensor.bedroom_temperature
+
+  - platform: homeassistant
+    id: bedroom_remote_temperature
+    entity_id: sensor.bedroom_remote_temperature
+
+  # Hardware and bridge health diagnostics.
   - platform: uptime
     name: "Uptime"
     update_interval: 60s

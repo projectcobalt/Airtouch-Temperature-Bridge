@@ -1,21 +1,24 @@
 from __future__ import annotations
 
 import esphome.codegen as cg
-from esphome.components import output, uart
+from esphome.components import output, sensor, uart
 import esphome.config_validation as cv
 from esphome.const import CONF_ID
 
-DEPENDENCIES = ["api", "uart"]
+AUTO_LOAD = ["sensor"]
+DEPENDENCIES = ["uart"]
 CODEOWNERS = []
 
 CONF_AGGREGATION = "aggregation"
 CONF_FALLBACK_ZONE_COUNT = "fallback_zone_count"
 CONF_GROUP = "group"
+CONF_LED_PULSE_DURATION = "led_pulse_duration"
 CONF_MODULE_ADDRESS = "module_address"
 CONF_RAW_LOGGING = "raw_logging"
-CONF_TEMPERATURE_ENTITIES = "temperature_entities"
+CONF_REPORT_INTERVAL = "report_interval"
 CONF_TEMPERATURE_LED = "temperature_led"
 CONF_TEMPERATURE_REPORTING = "temperature_reporting"
+CONF_TEMPERATURE_SENSORS = "temperature_sensors"
 CONF_ZONES = "zones"
 
 bridge_ns = cg.esphome_ns.namespace("temperature_encoding_bridge")
@@ -36,8 +39,8 @@ ZONE_SCHEMA = cv.Schema(
         cv.Optional(CONF_AGGREGATION, default="average"): cv.one_of(
             *AGGREGATIONS, lower=True
         ),
-        cv.Required(CONF_TEMPERATURE_ENTITIES): cv.All(
-            cv.ensure_list(cv.entity_id),
+        cv.Required(CONF_TEMPERATURE_SENSORS): cv.All(
+            cv.ensure_list(cv.use_id(sensor.Sensor)),
             cv.Length(min=1, max=3),
         ),
     }
@@ -67,6 +70,12 @@ CONFIG_SCHEMA = (
             ),
             cv.Optional(CONF_TEMPERATURE_REPORTING, default=True): cv.boolean,
             cv.Optional(CONF_RAW_LOGGING, default=False): cv.boolean,
+            cv.Optional(
+                CONF_REPORT_INTERVAL, default="30s"
+            ): cv.positive_time_period_milliseconds,
+            cv.Optional(
+                CONF_LED_PULSE_DURATION, default="150ms"
+            ): cv.positive_time_period_milliseconds,
             cv.Optional(CONF_TEMPERATURE_LED): cv.use_id(output.BinaryOutput),
             cv.Optional(CONF_ZONES, default=[]): cv.All(
                 cv.ensure_list(ZONE_SCHEMA),
@@ -91,7 +100,6 @@ FINAL_VALIDATE_SCHEMA = uart.final_validate_device_schema(
 
 
 async def to_code(config):
-    cg.add_define("USE_API_HOMEASSISTANT_STATES")
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await uart.register_uart_device(var, config)
@@ -100,6 +108,16 @@ async def to_code(config):
     cg.add(var.set_fallback_zone_count(config[CONF_FALLBACK_ZONE_COUNT]))
     cg.add(var.set_temperature_reporting(config[CONF_TEMPERATURE_REPORTING]))
     cg.add(var.set_raw_logging(config[CONF_RAW_LOGGING]))
+    cg.add(
+        var.set_report_interval(
+            config[CONF_REPORT_INTERVAL].total_milliseconds
+        )
+    )
+    cg.add(
+        var.set_led_pulse_duration(
+            config[CONF_LED_PULSE_DURATION].total_milliseconds
+        )
+    )
 
     if CONF_TEMPERATURE_LED in config:
         temperature_led = await cg.get_variable(config[CONF_TEMPERATURE_LED])
@@ -109,5 +127,6 @@ async def to_code(config):
         group = zone[CONF_GROUP]
         cg.add(var.add_zone(group, AGGREGATIONS[zone[CONF_AGGREGATION]]))
 
-        for entity_id in zone[CONF_TEMPERATURE_ENTITIES]:
-            cg.add(var.add_temperature_source(group, entity_id))
+        for sensor_id in zone[CONF_TEMPERATURE_SENSORS]:
+            temperature_sensor = await cg.get_variable(sensor_id)
+            cg.add(var.add_temperature_source(group, temperature_sensor))

@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "esphome/components/output/binary_output.h"
+#include "esphome/components/sensor/sensor.h"
 #include "esphome/components/uart/uart.h"
 #include "esphome/core/component.h"
 
@@ -16,7 +17,6 @@ namespace temperature_encoding_bridge {
 
 constexpr uint8_t MAX_ZONES = 16;
 constexpr size_t FRAME_OVERHEAD = 18;
-constexpr uint32_t REPORT_MIN_INTERVAL_MS = 30000;
 constexpr size_t LOOP_BYTE_BUDGET = 256;
 constexpr size_t LOOP_FRAME_BUDGET = 8;
 
@@ -27,9 +27,7 @@ enum class Aggregation : uint8_t {
 };
 
 struct TemperatureSource {
-  std::string entity_id;
-  float state{NAN};
-  bool has_state{false};
+  sensor::Sensor *sensor;
 };
 
 struct ZoneConfig {
@@ -66,9 +64,11 @@ class TemperatureEncodingBridge : public Component, public uart::UARTDevice {
   void set_fallback_zone_count(uint8_t count);
   void set_temperature_reporting(bool enabled);
   void set_raw_logging(bool enabled);
+  void set_report_interval(uint32_t interval_ms);
+  void set_led_pulse_duration(uint32_t duration_ms);
   void set_temperature_led(output::BinaryOutput *led);
   void add_zone(uint8_t group, Aggregation aggregation);
-  void add_temperature_source(uint8_t group, const std::string &entity_id);
+  void add_temperature_source(uint8_t group, sensor::Sensor *source);
   uint32_t get_rx_frame_count() const { return this->rx_frame_count_; }
   uint32_t get_tx_frame_count() const { return this->tx_frame_count_; }
   uint32_t get_crc_error_count() const { return this->crc_error_count_; }
@@ -109,6 +109,8 @@ class TemperatureEncodingBridge : public Component, public uart::UARTDevice {
   uint32_t rx_frame_count_{0};
   uint32_t tx_frame_count_{0};
   uint32_t crc_error_count_{0};
+  uint32_t report_interval_ms_{30000};
+  uint32_t led_pulse_duration_ms_{150};
   bool pairing_mode_{false};
   bool temperature_reporting_{true};
   bool raw_logging_{false};

@@ -4,8 +4,6 @@
 #include <cmath>
 #include <cstdio>
 
-#include "esphome/components/api/api_server.h"
-#include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
 
 namespace esphome {
@@ -102,6 +100,14 @@ void TemperatureEncodingBridge::set_raw_logging(bool enabled) {
   this->raw_logging_ = enabled;
 }
 
+void TemperatureEncodingBridge::set_report_interval(uint32_t interval_ms) {
+  this->report_interval_ms_ = interval_ms;
+}
+
+void TemperatureEncodingBridge::set_led_pulse_duration(uint32_t duration_ms) {
+  this->led_pulse_duration_ms_ = duration_ms;
+}
+
 void TemperatureEncodingBridge::set_temperature_led(
     output::BinaryOutput *led) {
   this->temperature_led_ = led;
@@ -113,11 +119,11 @@ void TemperatureEncodingBridge::add_zone(uint8_t group,
 }
 
 void TemperatureEncodingBridge::add_temperature_source(
-    uint8_t group, const std::string &entity_id) {
+    uint8_t group, sensor::Sensor *source) {
   ZoneConfig *zone = this->find_zone_(group);
   if (zone == nullptr)
     return;
-  zone->sources.push_back({entity_id});
+  zone->sources.push_back({source});
 }
 
 ZoneConfig *TemperatureEncodingBridge::find_zone_(uint8_t group) {
@@ -136,20 +142,11 @@ void TemperatureEncodingBridge::setup() {
     this->temperature_led_->turn_off();
   for (auto &zone : this->zones_) {
     for (auto &source : zone.sources) {
-      auto *source_ptr = &source;
-      api::global_api_server->subscribe_home_assistant_state(
-          source.entity_id.c_str(), nullptr,
-          [this, source_ptr](StringRef state) {
-            const auto value = parse_number<float>(state.c_str());
-            source_ptr->has_state = value.has_value();
-            source_ptr->state = value.value_or(NAN);
-            if (!source_ptr->has_state) {
-              ESP_LOGW(TAG, "Cannot convert HA state '%s' for %s",
-                       state.c_str(), source_ptr->entity_id.c_str());
-              return;
-            }
-            this->pulse_temperature_led_();
-      });
+      source.sensor->add_on_state_callback(
+          [this](float state) {
+            if (std::isfinite(state))
+              this->pulse_temperature_led_();
+          });
     }
   }
   this->set_timeout("ready_1", 3000, [this]() { this->send_ready_(); });
@@ -181,6 +178,9 @@ void TemperatureEncodingBridge::dump_config() {
                 this->controller_zone_count_);
   ESP_LOGCONFIG(TAG, "  Temperature reporting: %s",
                 this->temperature_reporting_ ? "enabled" : "disabled");
+  ESP_LOGCONFIG(TAG, "  Report interval: %u ms", this->report_interval_ms_);
+  ESP_LOGCONFIG(TAG, "  LED pulse duration: %u ms",
+                this->led_pulse_duration_ms_);
   for (const auto &zone : this->zones_) {
     const char *mode = zone.aggregation == Aggregation::AVERAGE
                            ? "average"
@@ -359,17 +359,18 @@ bool TemperatureEncodingBridge::aggregate_zone_(
   float total = 0.0f;
   size_t count = 0;
   for (const auto &source : zone.sources) {
-    if (!source.has_state || !std::isfinite(source.state))
+    if (!source.sensor->has_state() || !std::isfinite(source.sensor->state))
       continue;
+    const float state = source.sensor->state;
     if (!found) {
-      temperature = source.state;
+      temperature = state;
       found = true;
     } else if (zone.aggregation == Aggregation::MINIMUM) {
-      temperature = std::min(temperature, source.state);
+      temperature = std::min(temperature, state);
     } else if (zone.aggregation == Aggregation::MAXIMUM) {
-      temperature = std::max(temperature, source.state);
+      temperature = std::max(temperature, state);
     }
-    total += source.state;
+    total += state;
     count++;
   }
   if (!found)
@@ -392,7 +393,7 @@ bool TemperatureEncodingBridge::send_next_temperature_() {
     if (zone.group > this->controller_zone_count_)
       continue;
     if (zone.last_send_ms != 0 &&
-        now - zone.last_send_ms < REPORT_MIN_INTERVAL_MS)
+        now - zone.last_send_ms < this->report_interval_ms_)
       continue;
 
     float temperature;
@@ -430,7 +431,7 @@ void TemperatureEncodingBridge::pulse_temperature_led_() {
   if (this->temperature_led_ == nullptr)
     return;
   this->temperature_led_->turn_on();
-  this->set_timeout("temperature_led", 150,
+  this->set_timeout("temperature_led", this->led_pulse_duration_ms_,
                     [this]() { this->temperature_led_->turn_off(); });
 }
 
