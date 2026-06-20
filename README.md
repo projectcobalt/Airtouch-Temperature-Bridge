@@ -51,12 +51,13 @@ not provide power-supply or level-shifter guarantees for every installation.
 4. Add the Home Assistant temperature entities for each required zone.
 5. Validate and install the device from ESPHome.
 
-The device configuration imports both reusable packages directly from GitHub:
+The custom component is loaded with:
 
 ```yaml
-packages:
-  bridge: github://projectcobalt/Airtouch-Temperature-Bridge/packages/airtouch-temperature-bridge.yaml@main
-  diagnostics: github://projectcobalt/Airtouch-Temperature-Bridge/packages/hardware-diagnostics.yaml@main
+external_components:
+  - source: github://projectcobalt/Airtouch-Temperature-Bridge
+    components:
+      - temperature_encoding_bridge
 ```
 
 Pin mapping remains device-specific:
@@ -89,28 +90,20 @@ temperature_encoding_bridge:
         - sensor.bedroom_remote_temperature
 ```
 
-The generated device YAML should contain no local component or package paths.
-GitHub remains the source of truth for the bridge component and diagnostics,
-while the device YAML owns its board, pin mapping, credentials, and zones.
-
 Only listed groups are enabled. Groups must be unique and between 1 and 16.
 Each group accepts one to three numeric Home Assistant entities. Invalid or
 unavailable readings are ignored; the group waits until at least one source has
 a valid value.
 
-## Factory Provisioning
+## First Flash
 
-[factory.yaml](factory.yaml) is a credential-free first-flash configuration. It
-imports the released packages from GitHub, uses a MAC-suffixed device name and
-serial Improv provisioning, and contains no Wi-Fi credentials, API key, OTA
-password, fallback AP password, or household entity IDs.
-
-After adoption, add the required zones to the device YAML and install the normal
-configuration.
+[factory.yaml](factory.yaml) provides a serial Improv first-flash configuration.
+After adoption, configure the board pins and zones using
+[examples/basic.yaml](examples/basic.yaml).
 
 ## Diagnostics
 
-The optional diagnostics package exposes slow-updating hardware health entities:
+The example exposes slow-updating hardware health entities:
 
 - uptime, Wi-Fi signal, ESP temperature, and ESPHome version;
 - free, minimum, and largest heap values;
@@ -135,13 +128,13 @@ general-purpose protocol dump.
 
 ```text
 components/temperature_encoding_bridge/  ESPHome external component
-packages/airtouch-temperature-bridge.yaml Reusable UART and hardware package
-packages/hardware-diagnostics.yaml        Optional diagnostic entities
 examples/basic.yaml                       Annotated installed-device example
-factory.yaml                              Sanitized first-flash configuration
+factory.yaml                              Serial Improv first-flash configuration
 ```
 
 ## Status
+
+Current release: `v1.0.0`
 
 The component supports up to 16 zones, one to three source sensors per zone,
 dynamic frame lengths, CRC validation, controller restart recovery, and bounded

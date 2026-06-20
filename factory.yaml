@@ -1,10 +1,15 @@
 substitutions:
   device_name: airtouch-temp-bridge
   friendly_name: AirTouch Temperature Bridge
+  bridge_rx_pin: GPIO7
+  bridge_tx_pin: GPIO5
+  status_led_pin: GPIO18
+  temperature_led_pin: GPIO16
 
-packages:
-  bridge: github://projectcobalt/Airtouch-Temperature-Bridge/packages/airtouch-temperature-bridge.yaml@main
-  diagnostics: github://projectcobalt/Airtouch-Temperature-Bridge/packages/hardware-diagnostics.yaml@main
+external_components:
+  - source: github://projectcobalt/Airtouch-Temperature-Bridge
+    components:
+      - temperature_encoding_bridge
 
 esphome:
   name: ${device_name}
@@ -12,7 +17,7 @@ esphome:
   name_add_mac_suffix: true
   project:
     name: projectcobalt.airtouch-temperature-bridge
-    version: factory
+    version: "1.0.0"
 
 esp32:
   board: lolin_s2_mini
@@ -23,8 +28,28 @@ esp32:
 logger:
   level: INFO
 
-# Credentials are intentionally omitted. Provision Wi-Fi over serial Improv,
-# then adopt the device in ESPHome.
+status_led:
+  pin:
+    number: ${status_led_pin}
+    inverted: false
+
+output:
+  - platform: gpio
+    id: temperature_update_led
+    pin:
+      number: ${temperature_led_pin}
+      inverted: false
+
+uart:
+  - id: bridge_uart
+    rx_pin: ${bridge_rx_pin}
+    tx_pin: ${bridge_tx_pin}
+    baud_rate: 115200
+    data_bits: 8
+    stop_bits: 1
+    parity: NONE
+    rx_buffer_size: 2048
+
 api:
 
 ota:
