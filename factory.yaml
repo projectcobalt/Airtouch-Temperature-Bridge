@@ -3,8 +3,8 @@ substitutions:
   friendly_name: AirTouch Temperature Bridge
 
 packages:
-  bridge: !include packages/airtouch-temperature-bridge.yaml
-  diagnostics: !include packages/hardware-diagnostics.yaml
+  bridge: github://projectcobalt/Airtouch-Temperature-Bridge/packages/airtouch-temperature-bridge.yaml@main
+  diagnostics: github://projectcobalt/Airtouch-Temperature-Bridge/packages/hardware-diagnostics.yaml@main
 
 esphome:
   name: ${device_name}

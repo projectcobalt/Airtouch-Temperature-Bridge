@@ -1,6 +1,11 @@
 substitutions:
   device_name: temperature-bridge
   friendly_name: AirTouch Temperature Bridge
+  # Change these four pins to match your ESP32 board and wiring.
+  bridge_rx_pin: GPIO7
+  bridge_tx_pin: GPIO5
+  status_led_pin: GPIO18
+  temperature_led_pin: GPIO16
 
 # The bridge package creates the UART, status LED, activity LED, and external
 # component. The diagnostics package is optional but recommended.

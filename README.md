@@ -44,7 +44,14 @@ not provide power-supply or level-shifter guarantees for every installation.
 
 ## Install
 
-Create an ESPHome device YAML and import the package:
+1. Create a new ESPHome device using the board appropriate for your hardware.
+2. Replace the generated device YAML with
+   [examples/basic.yaml](examples/basic.yaml).
+3. Set the four pin substitutions for your board and wiring.
+4. Add the Home Assistant temperature entities for each required zone.
+5. Validate and install the device from ESPHome.
+
+The device configuration imports both reusable packages directly from GitHub:
 
 ```yaml
 packages:
@@ -52,7 +59,17 @@ packages:
   diagnostics: github://projectcobalt/Airtouch-Temperature-Bridge/packages/hardware-diagnostics.yaml@main
 ```
 
-Then configure the bridge:
+Pin mapping remains device-specific:
+
+```yaml
+substitutions:
+  bridge_rx_pin: GPIO7
+  bridge_tx_pin: GPIO5
+  status_led_pin: GPIO18
+  temperature_led_pin: GPIO16
+```
+
+Then configure the required zones:
 
 ```yaml
 temperature_encoding_bridge:
@@ -72,8 +89,9 @@ temperature_encoding_bridge:
         - sensor.bedroom_remote_temperature
 ```
 
-See [examples/basic.yaml](examples/basic.yaml) for a complete annotated
-configuration.
+The generated device YAML should contain no local component or package paths.
+GitHub remains the source of truth for the bridge component and diagnostics,
+while the device YAML owns its board, pin mapping, credentials, and zones.
 
 Only listed groups are enabled. Groups must be unique and between 1 and 16.
 Each group accepts one to three numeric Home Assistant entities. Invalid or
@@ -83,9 +101,9 @@ a valid value.
 ## Factory Provisioning
 
 [factory.yaml](factory.yaml) is a credential-free first-flash configuration. It
-uses a MAC-suffixed device name and serial Improv provisioning. It contains no
-Wi-Fi credentials, API key, OTA password, fallback AP password, or household
-entity IDs.
+imports the released packages from GitHub, uses a MAC-suffixed device name and
+serial Improv provisioning, and contains no Wi-Fi credentials, API key, OTA
+password, fallback AP password, or household entity IDs.
 
 After adoption, add the required zones to the device YAML and install the normal
 configuration.
