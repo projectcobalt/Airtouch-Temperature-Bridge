@@ -164,7 +164,7 @@ factory.yaml                              Serial Improv first-flash configuratio
 
 ## Status
 
-Current release: `v2.0.0`
+Current release: `v2.0.1`
 
 The component supports up to 16 zones, one to three source sensors per zone,
 local and remote temperature sources, configurable reporting and LED timing,
