@@ -20,7 +20,7 @@ esphome:
   friendly_name: ${friendly_name}
   project:
     name: projectcobalt.airtouch-temperature-bridge
-    version: "2.0.1"
+    version: "2.0.2"
 
 esp32:
   board: lolin_s2_mini

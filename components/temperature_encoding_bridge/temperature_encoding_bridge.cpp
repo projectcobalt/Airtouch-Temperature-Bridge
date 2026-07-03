@@ -215,7 +215,7 @@ uint8_t TemperatureEncodingBridge::encode_temperature_(float temperature) {
     int raw = static_cast<int>(lroundf(temperature)) + 25;
     return static_cast<uint8_t>(std::max(1, std::min(0x27, raw)));
   }
-  int raw = static_cast<int>(lroundf(temperature * 10.0f - 110.0f));
+  int raw = static_cast<int>(lroundf(temperature * 10.0f - 105.0f));
   return static_cast<uint8_t>(std::max(0x28, std::min(0xFF, raw)));
 }
 
