@@ -125,6 +125,14 @@ unavailable readings are ignored; the group waits until at least one source has
 a valid value. Local sensors continue reporting to the controller when Home
 Assistant is unavailable.
 
+Temperatures are rounded to the nearest value the receiver can represent:
+whole degrees from -25 to 14°C, tenths from 14.5 to 33.6°C, and whole degrees
+from 35 to 55°C. Exact ties round warmer. This also applies across the gaps:
+14.25°C rounds to 14.5°C, and 34°C rounds to 33.6°C. Comparisons use the actual
+floating-point sensor value, so decimal midpoints may fall slightly to either
+side. Finite readings outside -25 to 55°C clamp to the nearest endpoint.
+Non-finite sources are ignored, and a non-finite aggregate is not reported.
+
 ## First Flash
 
 [factory.yaml](factory.yaml) provides a serial Improv first-flash configuration.
@@ -164,7 +172,7 @@ factory.yaml                              Serial Improv first-flash configuratio
 
 ## Status
 
-Current release: `v2.0.2`
+Current release: `v2.0.3`
 
 The component supports up to 16 zones, one to three source sensors per zone,
 local and remote temperature sources, configurable reporting and LED timing,
