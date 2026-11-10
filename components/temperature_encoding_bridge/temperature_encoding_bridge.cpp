@@ -211,12 +211,31 @@ void TemperatureEncodingBridge::append_crc_(std::vector<uint8_t> &frame) {
 }
 
 uint8_t TemperatureEncodingBridge::encode_temperature_(float temperature) {
-  if (temperature < 14.5f) {
-    int raw = static_cast<int>(lroundf(temperature)) + 25;
-    return static_cast<uint8_t>(std::max(1, std::min(0x27, raw)));
+  if (!std::isfinite(temperature))
+    return 0xFF;
+
+  const auto decode_tenths = [](int raw) {
+    if (raw <= 0x27)
+      return (raw - 25) * 10;
+    if (raw <= 0xE7)
+      return raw + 105;
+    return (raw - 197) * 10;
+  };
+
+  // Search adjacent-code midpoints for the nearest representable temperature.
+  // Comparing in double preserves the float input, including midpoint neighbors.
+  // Ties select the warmer value; values outside -25..55 C clamp to endpoints.
+  const double twice_tenths = static_cast<double>(temperature) * 20.0;
+  int low = 0x00;
+  int high = 0xFC;
+  while (low < high) {
+    const int middle = (low + high) / 2;
+    if (twice_tenths < decode_tenths(middle) + decode_tenths(middle + 1))
+      high = middle;
+    else
+      low = middle + 1;
   }
-  int raw = static_cast<int>(lroundf(temperature * 10.0f - 105.0f));
-  return static_cast<uint8_t>(std::max(0x28, std::min(0xFF, raw)));
+  return static_cast<uint8_t>(low);
 }
 
 uint8_t TemperatureEncodingBridge::slot_for_group_(uint8_t group) {
@@ -397,7 +416,7 @@ bool TemperatureEncodingBridge::send_next_temperature_() {
       continue;
 
     float temperature;
-    if (!this->aggregate_zone_(zone, temperature))
+    if (!this->aggregate_zone_(zone, temperature) || !std::isfinite(temperature))
       continue;
 
     const uint8_t slot = slot_for_group_(zone.group);
