@@ -5,9 +5,10 @@ from esphome.components import output, sensor, uart
 import esphome.config_validation as cv
 from esphome.const import CONF_ID
 
-AUTO_LOAD = ["sensor"]
-DEPENDENCIES = ["uart"]
+AUTO_LOAD = ["output", "sensor"]
 CODEOWNERS = []
+DEPENDENCIES = ["uart"]
+DOMAIN = "temperature_encoding_bridge"
 
 CONF_AGGREGATION = "aggregation"
 CONF_FALLBACK_ZONE_COUNT = "fallback_zone_count"
