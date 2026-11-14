@@ -133,9 +133,9 @@ floating-point sensor value, so decimal midpoints may fall slightly to either
 side. Finite readings outside -25 to 55°C clamp to the nearest endpoint.
 Non-finite sources are ignored, and a non-finite aggregate is not reported.
 
-## Calibration reference maintenance
+## Calibration reference controls
 
-To temporarily expose maintenance controls, add an empty key to the bridge:
+Add this empty key to your existing bridge configuration:
 
 ```yaml
 temperature_encoding_bridge:
@@ -143,25 +143,33 @@ temperature_encoding_bridge:
   calibration_reset:
 ```
 
-Omit the key to disable the feature and remove its controls. It takes no boolean,
-temperature, timeout, or other options. It exposes **Start Calibration Reference**,
-**Cancel Calibration Reference**, and **Calibration Reference Active**.
+Leave the key empty. There are no adjustable settings. Compile and install the
+firmware to add these controls:
 
-Start reports **22.0°C** for each configured group within the controller's active
-group count, including groups whose source readings are unavailable. The normal
-five-second round-robin scan sends one report at a time; wait until each intended
-slot has sent its reference before calibrating it. Repeated Start presses do not
-extend the **two-minute** window. Cancel or timeout restores current source
-readings through that same scan; a group without valid readings waits for them.
-Reboots always start idle. Explicitly disabled temperature reporting prevents Start.
+- **Start Calibration Reference** button
+- **Cancel Calibration Reference** button
+- **Calibration Reference Active** indicator
 
-This prepares reference readings; **it does not send controller calibration
-commands or clear calibration itself**. The operator is responsible for turning
-HVAC off, then using OpenAirTouch or another controller interface to calibrate the
-matching sensor slots to 22°C. The bridge cannot inspect AC power. After the
-procedure, cancel, verify normal readings, remove the key and reflash if the
-maintenance controls are no longer needed. The end-to-end calibration procedure
-still requires hardware verification.
+Start makes the bridge report **22.0°C** for each configured group. It skips groups
+above the controller's reported group count. Each group uses its first sensor
+slot. Missing source readings do not prevent these reports. The bridge checks
+for the next report every five seconds. Each check sends at most one group report.
+Set `raw_logging: true` to see the reports in ESPHome logs. Wait for each required
+slot's report before you send its calibration command.
+
+Cancel or the **two-minute timeout** ends the reference period. Repeated Start
+presses do not extend this period. The bridge then sends current source readings
+on its usual reporting schedule. Groups with no valid source readings must wait
+for new readings. After a restart, the reference period is inactive.
+Start has no effect when temperature reporting is disabled.
+
+The bridge supplies reference readings. It does not clear controller calibration
+or send calibration commands. Turn the AC off before you start. The bridge cannot
+check AC power. Use OpenAirTouch or another controller interface to calibrate each
+required sensor slot to **22°C**. Then cancel and check that normal readings resume.
+This complete procedure has not been tested on hardware.
+
+To remove these controls, remove the key, then compile and install the firmware again.
 
 ## First Flash
 

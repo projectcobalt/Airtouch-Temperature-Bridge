@@ -42,13 +42,13 @@ docker exec esphome-builder python /tmp/temperature-bridge-tests/tests/calibrati
 docker exec esphome-builder python /tmp/temperature-bridge-tests/tests/calibration_codegen_test.py
 ```
 
-The control test presses the component's forwarding buttons and checks emitted
-frames, status and deterministic scheduler expiry. It covers unavailable sources,
-live input changes, slot filtering, cancellation, repeated Start, exact and delayed
-timeout callbacks, clock wrap, reboot state and disabled reporting. The existing
-encoding test also runs without the maintenance compile define.
+The control test presses the buttons and checks UART frames and the active indicator.
+It checks the timeout at its deadline and when the timer callback is late.
+Other checks cover missing readings, changed inputs, excluded slots, Cancel,
+repeated Start, timer wraparound, restart state and disabled reporting.
+The existing encoding test runs with the calibration reference code disabled.
 
-Real ESPHome builds exercise the presence-only key and generated entity classes:
+Use these ESPHome builds to check the YAML key and the generated controls:
 
 ```sh
 docker exec esphome-builder esphome compile /tmp/temperature-bridge-tests/tests/configs/calibration_enabled.yaml
@@ -57,7 +57,7 @@ docker exec esphome-builder esphome compile /tmp/temperature-bridge-tests/tests/
 docker exec esphome-builder esphome compile /tmp/temperature-bridge-tests/tests/configs/calibration_disabled_led.yaml --only-generate
 ```
 
-The omitted-key generated source must have no calibration-reference entities or
-`USE_TEMPERATURE_BRIDGE_CALIBRATION_RESET` define. The LED variants must retain
-their LED setter wiring. Fixtures share a build name and are run sequentially;
-these sandbox builds are never intended for flashing live equipment.
+When the key is absent, the generated source must contain no reference controls
+or `USE_TEMPERATURE_BRIDGE_CALIBRATION_RESET` definition. Configurations with an LED
+must keep the LED connected to the bridge. These configurations use the same build
+name. Run them one at a time. Do not install these test builds on live equipment.
