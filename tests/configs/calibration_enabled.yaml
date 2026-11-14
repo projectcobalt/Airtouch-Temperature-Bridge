@@ -1,0 +1,5 @@
+packages:
+  bridge: !include common.yaml
+
+temperature_encoding_bridge:
+  calibration_reset:

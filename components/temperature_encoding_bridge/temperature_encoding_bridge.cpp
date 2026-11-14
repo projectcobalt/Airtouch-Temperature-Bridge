@@ -135,6 +135,11 @@ ZoneConfig *TemperatureEncodingBridge::find_zone_(uint8_t group) {
 }
 
 void TemperatureEncodingBridge::setup() {
+#ifdef USE_TEMPERATURE_BRIDGE_CALIBRATION_RESET
+  this->calibration_reset_active_ = false;
+  if (this->calibration_reset_active_sensor_ != nullptr)
+    this->calibration_reset_active_sensor_->publish_state(false);
+#endif
   this->rx_frame_.reserve(FRAME_OVERHEAD + 512);
   this->tx_frame_.reserve(FRAME_OVERHEAD + 512);
   this->tx_payload_.reserve(512);
@@ -400,6 +405,10 @@ bool TemperatureEncodingBridge::aggregate_zone_(
 }
 
 bool TemperatureEncodingBridge::send_next_temperature_() {
+#ifdef USE_TEMPERATURE_BRIDGE_CALIBRATION_RESET
+  if (this->calibration_reset_active_ && millis() - this->calibration_reset_started_ms_ >= 120000)
+    this->cancel_calibration_reset();
+#endif
   if (!this->temperature_reporting_ || this->zones_.empty())
     return false;
 
@@ -416,8 +425,14 @@ bool TemperatureEncodingBridge::send_next_temperature_() {
       continue;
 
     float temperature;
-    if (!this->aggregate_zone_(zone, temperature) || !std::isfinite(temperature))
+#ifdef USE_TEMPERATURE_BRIDGE_CALIBRATION_RESET
+    if (this->calibration_reset_active_) {
+      temperature = 22.0f;
+    } else
+#endif
+    if (!this->aggregate_zone_(zone, temperature) || !std::isfinite(temperature)) {
       continue;
+    }
 
     const uint8_t slot = slot_for_group_(zone.group);
     this->tx_frame_ = {0x55, 0x55, 0x80, slot,
@@ -445,6 +460,47 @@ bool TemperatureEncodingBridge::send_next_temperature_() {
   }
   return false;
 }
+
+#ifdef USE_TEMPERATURE_BRIDGE_CALIBRATION_RESET
+void CalibrationResetButton::press_action() {
+  if (this->cancel_)
+    this->parent_->cancel_calibration_reset();
+  else
+    this->parent_->start_calibration_reset();
+}
+
+void TemperatureEncodingBridge::start_calibration_reset() {
+  if (this->calibration_reset_active_)
+    return;
+  bool eligible = false;
+  for (const auto &zone : this->zones_)
+    eligible |= zone.group <= this->controller_zone_count_;
+  if (!this->temperature_reporting_ || !eligible) {
+    ESP_LOGW(TAG, "Calibration reference requires temperature reporting and an eligible configured group");
+    return;
+  }
+  this->calibration_reset_active_ = true;
+  this->calibration_reset_started_ms_ = millis();
+  for (auto &zone : this->zones_)
+    zone.last_send_ms = 0;
+  if (this->calibration_reset_active_sensor_ != nullptr)
+    this->calibration_reset_active_sensor_->publish_state(true);
+  this->set_timeout("calibration_reset", 120000, [this]() { this->cancel_calibration_reset(); });
+  ESP_LOGI(TAG, "Calibration reference active: reporting 22.0 C for two minutes; controller calibration is separate");
+}
+
+void TemperatureEncodingBridge::cancel_calibration_reset() {
+  if (!this->calibration_reset_active_)
+    return;
+  this->cancel_timeout("calibration_reset");
+  this->calibration_reset_active_ = false;
+  for (auto &zone : this->zones_)
+    zone.last_send_ms = 0;
+  if (this->calibration_reset_active_sensor_ != nullptr)
+    this->calibration_reset_active_sensor_->publish_state(false);
+  ESP_LOGI(TAG, "Calibration reference ended; ordinary temperature reporting resumed");
+}
+#endif
 
 void TemperatureEncodingBridge::pulse_temperature_led_() {
   if (this->temperature_led_ == nullptr)

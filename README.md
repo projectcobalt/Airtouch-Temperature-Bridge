@@ -133,6 +133,36 @@ floating-point sensor value, so decimal midpoints may fall slightly to either
 side. Finite readings outside -25 to 55°C clamp to the nearest endpoint.
 Non-finite sources are ignored, and a non-finite aggregate is not reported.
 
+## Calibration reference maintenance
+
+To temporarily expose maintenance controls, add an empty key to the bridge:
+
+```yaml
+temperature_encoding_bridge:
+  # Keep your existing UART, zones, and other settings here.
+  calibration_reset:
+```
+
+Omit the key to disable the feature and remove its controls. It takes no boolean,
+temperature, timeout, or other options. It exposes **Start Calibration Reference**,
+**Cancel Calibration Reference**, and **Calibration Reference Active**.
+
+Start reports **22.0°C** for each configured group within the controller's active
+group count, including groups whose source readings are unavailable. The normal
+five-second round-robin scan sends one report at a time; wait until each intended
+slot has sent its reference before calibrating it. Repeated Start presses do not
+extend the **two-minute** window. Cancel or timeout restores current source
+readings through that same scan; a group without valid readings waits for them.
+Reboots always start idle. Explicitly disabled temperature reporting prevents Start.
+
+This prepares reference readings; **it does not send controller calibration
+commands or clear calibration itself**. The operator is responsible for turning
+HVAC off, then using OpenAirTouch or another controller interface to calibrate the
+matching sensor slots to 22°C. The bridge cannot inspect AC power. After the
+procedure, cancel, verify normal readings, remove the key and reflash if the
+maintenance controls are no longer needed. The end-to-end calibration procedure
+still requires hardware verification.
+
 ## First Flash
 
 [factory.yaml](factory.yaml) provides a serial Improv first-flash configuration.

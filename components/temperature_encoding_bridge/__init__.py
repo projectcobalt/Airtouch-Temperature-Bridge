@@ -4,13 +4,24 @@ import esphome.codegen as cg
 from esphome.components import output, sensor, uart
 import esphome.config_validation as cv
 from esphome.const import CONF_ID
+from esphome.types import ConfigType
 
-AUTO_LOAD = ["output", "sensor"]
+from . import calibration_reset
+
+
+def AUTO_LOAD(config: ConfigType) -> list[str]:
+    components = ["output", "sensor"]
+    if CONF_CALIBRATION_RESET in config:
+        components.extend(["binary_sensor", "button"])
+    return components
+
+
 CODEOWNERS = []
 DEPENDENCIES = ["uart"]
 DOMAIN = "temperature_encoding_bridge"
 
 CONF_AGGREGATION = "aggregation"
+CONF_CALIBRATION_RESET = "calibration_reset"
 CONF_FALLBACK_ZONE_COUNT = "fallback_zone_count"
 CONF_GROUP = "group"
 CONF_LED_PULSE_DURATION = "led_pulse_duration"
@@ -62,6 +73,7 @@ CONFIG_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(TemperatureEncodingBridge),
+            cv.Optional(CONF_CALIBRATION_RESET): calibration_reset.validate_calibration_reset,
             cv.Optional(
                 CONF_MODULE_ADDRESS,
                 default=[0x34, 0x65, 0x72, 0x30, 0x03, 0x19, 0x00, 0x79],
@@ -104,6 +116,9 @@ async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await uart.register_uart_device(var, config)
+
+    if CONF_CALIBRATION_RESET in config:
+        await calibration_reset.to_code(var, config[CONF_CALIBRATION_RESET])
 
     cg.add(var.set_module_address(config[CONF_MODULE_ADDRESS]))
     cg.add(var.set_fallback_zone_count(config[CONF_FALLBACK_ZONE_COUNT]))

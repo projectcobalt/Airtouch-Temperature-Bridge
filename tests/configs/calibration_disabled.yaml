@@ -1,0 +1,2 @@
+packages:
+  bridge: !include common.yaml

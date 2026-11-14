@@ -12,6 +12,11 @@
 #include "esphome/components/uart/uart.h"
 #include "esphome/core/component.h"
 
+#ifdef USE_TEMPERATURE_BRIDGE_CALIBRATION_RESET
+#include "esphome/components/binary_sensor/binary_sensor.h"
+#include "calibration_reset.h"
+#endif
+
 namespace esphome {
 namespace temperature_encoding_bridge {
 
@@ -69,6 +74,13 @@ class TemperatureEncodingBridge : public Component, public uart::UARTDevice {
   void set_temperature_led(output::BinaryOutput *led);
   void add_zone(uint8_t group, Aggregation aggregation);
   void add_temperature_source(uint8_t group, sensor::Sensor *source);
+#ifdef USE_TEMPERATURE_BRIDGE_CALIBRATION_RESET
+  void set_calibration_reset_active_sensor(binary_sensor::BinarySensor *sensor) {
+    this->calibration_reset_active_sensor_ = sensor;
+  }
+  void start_calibration_reset();
+  void cancel_calibration_reset();
+#endif
   uint32_t get_rx_frame_count() const { return this->rx_frame_count_; }
   uint32_t get_tx_frame_count() const { return this->tx_frame_count_; }
   uint32_t get_crc_error_count() const { return this->crc_error_count_; }
@@ -114,6 +126,11 @@ class TemperatureEncodingBridge : public Component, public uart::UARTDevice {
   bool pairing_mode_{false};
   bool temperature_reporting_{true};
   bool raw_logging_{false};
+#ifdef USE_TEMPERATURE_BRIDGE_CALIBRATION_RESET
+  binary_sensor::BinarySensor *calibration_reset_active_sensor_{nullptr};
+  bool calibration_reset_active_{false};
+  uint32_t calibration_reset_started_ms_{0};
+#endif
 };
 
 }  // namespace temperature_encoding_bridge
