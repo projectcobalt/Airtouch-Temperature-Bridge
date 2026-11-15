@@ -1,6 +1,7 @@
 #include "temperature_encoding_bridge.h"
 
 #include <algorithm>
+#include <cinttypes>
 #include <cmath>
 #include <cstdio>
 
@@ -183,8 +184,8 @@ void TemperatureEncodingBridge::dump_config() {
                 this->controller_zone_count_);
   ESP_LOGCONFIG(TAG, "  Temperature reporting: %s",
                 this->temperature_reporting_ ? "enabled" : "disabled");
-  ESP_LOGCONFIG(TAG, "  Report interval: %u ms", this->report_interval_ms_);
-  ESP_LOGCONFIG(TAG, "  LED pulse duration: %u ms",
+  ESP_LOGCONFIG(TAG, "  Report interval: %" PRIu32 " ms", this->report_interval_ms_);
+  ESP_LOGCONFIG(TAG, "  LED pulse duration: %" PRIu32 " ms",
                 this->led_pulse_duration_ms_);
   for (const auto &zone : this->zones_) {
     const char *mode = zone.aggregation == Aggregation::AVERAGE
@@ -194,7 +195,6 @@ void TemperatureEncodingBridge::dump_config() {
     ESP_LOGCONFIG(TAG, "  Group %u: %u source(s), %s", zone.group,
                   static_cast<unsigned>(zone.sources.size()), mode);
   }
-  this->check_uart_settings(115200, 1, uart::UART_CONFIG_PARITY_NONE, 8);
 }
 
 uint16_t TemperatureEncodingBridge::crc16_modbus_(const uint8_t *data,

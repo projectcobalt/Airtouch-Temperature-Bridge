@@ -31,6 +31,11 @@ zig c++ -std=c++17 -Itests/stubs tests/temperature_encoding_test.cpp -o build/te
 
 Assertions must remain enabled; do not compile with `NDEBUG`.
 
+Run `python tests/uart_config_test.py` in an ESPHome Python environment to check
+that 115200 baud, 8N1 and both RX/TX pins are enforced during final validation.
+It accepts a valid configuration and rejects each of the six invalid settings
+through the real ESPHome configuration command.
+
 ## Calibration reference controls
 
 After copying the source and tests into the container as above:

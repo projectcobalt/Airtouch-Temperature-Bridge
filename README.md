@@ -210,7 +210,11 @@ factory.yaml                              Serial Improv first-flash configuratio
 
 ## Status
 
-Current release: `v2.0.5`
+Current release: `v2.0.6`
+
+This release corrects two log format warnings and removes a deprecated UART
+check. Configuration validation continues to require 115200 baud, eight data
+bits, no parity, one stop bit, and both RX and TX pins.
 
 The component supports up to 16 zones, one to three source sensors per zone,
 local and remote temperature sources, configurable reporting and LED timing,
