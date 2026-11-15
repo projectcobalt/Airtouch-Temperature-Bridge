@@ -1,0 +1,30 @@
+esphome:
+  name: bridge-calibration-test
+
+esp32:
+  board: lolin_s2_mini
+  framework:
+    type: arduino
+
+external_components:
+  - source:
+      type: local
+      path: ../../components
+
+uart:
+  id: bridge_uart
+  rx_pin: GPIO7
+  tx_pin: GPIO5
+  baud_rate: 115200
+
+sensor:
+  - platform: template
+    id: input_temperature
+    lambda: return 25.0f;
+
+temperature_encoding_bridge:
+  id: bridge
+  uart_id: bridge_uart
+  zones:
+    - group: 1
+      temperature_sensors: [input_temperature]

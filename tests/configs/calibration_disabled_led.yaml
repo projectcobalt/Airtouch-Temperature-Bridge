@@ -1,0 +1,10 @@
+packages:
+  bridge: !include calibration_disabled.yaml
+
+output:
+  - platform: gpio
+    id: temperature_update_led
+    pin: GPIO16
+
+temperature_encoding_bridge:
+  temperature_led: temperature_update_led
